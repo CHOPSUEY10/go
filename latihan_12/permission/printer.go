@@ -10,6 +10,8 @@ var errorMessage = map[string]string{
 	"1": "Invalid permissions",
 	"2": "Can't find the find you've asked",
 	"3": "Can't parse the permission of this file",
+	"4": "Can't parse the permission argument",
+	"5": "Please Input your file",
 }
 
 var successMessage = map[string]string{
@@ -21,23 +23,23 @@ var successMessage = map[string]string{
 
 func ErrorMsg(msg error) error {
 	idx := msg.Error()
-	return errors.New(errorMessage[idx])
+	panic(errors.New(errorMessage[idx]))
 }
 
 func SuccessMsg(msg string) {
 	fmt.Println(successMessage[msg])
 }
 
-func PrintCheckPermission(data []string) {
+func printCheckPermission(data []string) {
 
 	fmt.Printf("Izin akses data : %s \n", data)
 
 }
 
-func PrintFileInfo(file *FileData) {
+func printFileInfo(file *FileData) {
 
-	pm := CheckPermission(file)
-	fmt.Printf("File berhasil ditambahkan.\n")
+	pm := checkPermission(file)
+	//fmt.Printf("File berhasil ditambahkan.\n")
 	fmt.Printf("\tNama file : %s\n\tIzin file : %s\n\t Ukuran : %f %s", file.Nama, pm, file.Size.Value, file.Size.Unit)
 
 }

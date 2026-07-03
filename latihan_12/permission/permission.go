@@ -1,21 +1,49 @@
 package permission
 
 import (
-	"strings"
+	"errors"
+	"fmt"
+	"os"
 )
 
-func AddPermission(p string, file *FileData) {
-	p = strings.ToLower(p)
-	addPermission(p, file)
-}
+func Run(args ...any) {
 
-func RemovePermission(p string, file *FileData) {
+	namefile, ok := args[0].(string)
 
-	p = strings.ToLower(p)
-	removePermission(p, file)
+	if !ok {
+		ErrorMsg(errors.New("5"))
+	}
 
-}
+	binary := args[1].(string)
+	show, ok := args[2].(string)
 
-func PermissionString() {
+	file := func(n string) bool {
+		_, err := os.Stat(n)
+
+		fmt.Println("Checking:", n)
+		fmt.Println("Error:", err)
+
+		if os.IsNotExist(err) {
+			return false
+		}
+		return err == nil
+	}
+
+	if !file(namefile) {
+		ErrorMsg(errors.New("3"))
+	}
+
+	pm := parseToInt(binary)
+	f := filelist[namefile]
+
+	if f.Pm >= pm {
+		addPermission(pm, f)
+	} else if f.Pm <= pm {
+		removePermission(pm, f)
+	}
+
+	if show == "y" {
+		printFileInfo(f)
+	}
 
 }

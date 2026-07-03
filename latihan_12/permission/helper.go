@@ -27,7 +27,7 @@ type DataSize struct {
 // Operasi OR digunakan untuk menambah nilai
 func addPermission(p int64, file *FileData) {
 
-	state, err := HasPermission(p, file)
+	state, err := hasPermission(p, file)
 	if err != nil {
 		ErrorMsg(err)
 	}
@@ -41,7 +41,7 @@ func addPermission(p int64, file *FileData) {
 // Operasi XOR digunakan untuk mengurangi nilai
 func removePermission(p int64, file *FileData) {
 
-	state, err := HasPermission(p, file)
+	state, err := hasPermission(p, file)
 	if err != nil {
 		ErrorMsg(err)
 	}
@@ -53,7 +53,7 @@ func removePermission(p int64, file *FileData) {
 }
 
 // Operasi AND untuk mengecek nilai
-func HasPermission(p int64, file *FileData) (bool, error) {
+func hasPermission(p int64, file *FileData) (bool, error) {
 
 	if file.Pm >= 7 {
 		return false, errors.New("1")
@@ -68,10 +68,10 @@ func HasPermission(p int64, file *FileData) (bool, error) {
 
 }
 
-func ParseToInt(i string) (Pm int64) {
+func parseToInt(i string) int64 {
 
 	if len(i) != 3 {
-		panic("can't parse the permission argument")
+		ErrorMsg(errors.New("4"))
 	}
 	parsed, err := strconv.ParseInt(i, 2, 64)
 
@@ -82,7 +82,7 @@ func ParseToInt(i string) (Pm int64) {
 	return parsed
 }
 
-func CheckPermission(file *FileData) []string {
+func checkPermission(file *FileData) []string {
 
 	binerString := strconv.FormatInt(int64(file.Pm), 2)
 	var result = []string{}
@@ -91,7 +91,7 @@ func CheckPermission(file *FileData) []string {
 		binary, err := strconv.ParseBool(strconv.QuoteRune(v))
 
 		if err != nil {
-			ErrorMsg(errors.New("5"))
+			ErrorMsg(errors.New("3"))
 		}
 
 		if binary {
@@ -161,36 +161,7 @@ func addFile(i string) error {
 	}
 
 	filelist[i] = &data
-	PrintFileInfo(&data)
+	printFileInfo(&data)
 
 	return nil
-}
-
-func Run(namefile string, binary string) {
-
-	file := func(n string) bool {
-		_, err := os.Stat(n)
-
-		if os.IsNotExist(err) {
-			return false
-		}
-		return true
-	}
-
-	if !file(namefile) {
-		ErrorMsg(errors.New("3"))
-	}
-
-	pm := ParseToInt(binary)
-	f := *(filelist[namefile])
-
-	if f.Pm >= pm {
-
-		AddPermission(f)
-
-	} else if f.Pm <= pm {
-		AddPermission(f)
-
-	}
-
 }

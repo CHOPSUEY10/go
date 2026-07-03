@@ -8,8 +8,8 @@ import (
 
 var interpretation = []string{"read", "write", "execute"}
 var permissions = map[string]int64{"r": 4, "w": 2, "x": 1}
-var addMsg = map[string]string{"r": "1", "w": "2", "x": "3"}
-var rmMsg = map[string]string{"r": "4", "w": "5", "x": "6"}
+var addMsg = []string{"1", "2", "3"}
+var rmMsg = []string{"4", "5", "6"}
 var filelist = map[string]*FileData{}
 
 type FileData struct {
@@ -25,42 +25,42 @@ type DataSize struct {
 }
 
 // Operasi OR digunakan untuk menambah nilai
-func addPermission(p string, file *FileData) {
+func addPermission(p int64, file *FileData) {
 
 	state, err := HasPermission(p, file)
 	if err != nil {
 		ErrorMsg(err)
 	}
 	if !state {
-		file.Pm |= permissions[p]
+		file.Pm |= p
 		SuccessMsg(addMsg[p])
 	}
 	SuccessMsg(addMsg[p])
 }
 
 // Operasi XOR digunakan untuk mengurangi nilai
-func removePermission(p string, file *FileData) {
+func removePermission(p int64, file *FileData) {
 
 	state, err := HasPermission(p, file)
 	if err != nil {
 		ErrorMsg(err)
 	}
 	if !state {
-		file.Pm ^= permissions[p]
+		file.Pm ^= p
 		SuccessMsg(rmMsg[p])
 	}
 	SuccessMsg(rmMsg[p])
 }
 
 // Operasi AND untuk mengecek nilai
-func HasPermission(p string, file *FileData) (bool, error) {
+func HasPermission(p int64, file *FileData) (bool, error) {
 
 	if file.Pm >= 7 {
 		return false, errors.New("1")
 	}
 
-	check := func(p string, v int64) bool {
-		return v&permissions[p] == permissions[p]
+	check := func(p int64, v int64) bool {
+		return v&p == p
 
 	}
 
@@ -186,7 +186,10 @@ func Run(namefile string, binary string) {
 
 	if f.Pm >= pm {
 
+		AddPermission(f)
+
 	} else if f.Pm <= pm {
+		AddPermission(f)
 
 	}
 

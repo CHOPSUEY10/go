@@ -1,6 +1,9 @@
 package permission
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 var errorMessage = map[string]string{
 
@@ -16,9 +19,9 @@ var successMessage = map[string]string{
 	"3": "Berhasil memberikan izin mengeksekusi",
 }
 
-func ErrorMsg(msg error) {
+func ErrorMsg(msg error) error {
 	idx := msg.Error()
-	fmt.Println(errorMessage[idx])
+	return errors.New(errorMessage[idx])
 }
 
 func SuccessMsg(msg string) {

@@ -7,14 +7,15 @@ import (
 )
 
 var interpretation = []string{"read", "write", "execute"}
-var permissions = map[string]int{"r": 4, "w": 2, "x": 1}
+var permissions = map[string]int64{"r": 4, "w": 2, "x": 1}
 var addMsg = map[string]string{"r": "1", "w": "2", "x": "3"}
 var rmMsg = map[string]string{"r": "4", "w": "5", "x": "6"}
+var filelist = map[string]*FileData{}
 
 type FileData struct {
 	Nama string
 	//permission value
-	Pm   int
+	Pm   int64
 	Size DataSize
 }
 
@@ -58,13 +59,27 @@ func HasPermission(p string, file *FileData) (bool, error) {
 		return false, errors.New("1")
 	}
 
-	check := func(p string, v int) bool {
+	check := func(p string, v int64) bool {
 		return v&permissions[p] == permissions[p]
 
 	}
 
 	return check(p, file.Pm), nil
 
+}
+
+func ParseToInt(i string) (Pm int64) {
+
+	if len(i) != 3 {
+		panic("can't parse the permission argument")
+	}
+	parsed, err := strconv.ParseInt(i, 2, 64)
+
+	if err != nil {
+		ErrorMsg(errors.New("4"))
+	}
+
+	return parsed
 }
 
 func CheckPermission(file *FileData) []string {
@@ -76,7 +91,7 @@ func CheckPermission(file *FileData) []string {
 		binary, err := strconv.ParseBool(strconv.QuoteRune(v))
 
 		if err != nil {
-			ErrorMsg(err)
+			ErrorMsg(errors.New("5"))
 		}
 
 		if binary {
@@ -119,12 +134,20 @@ func formatSize(size int64) (value float64, unit string) {
 		return value, unit
 	}
 }
+
+func checkFile(i string) (os.FileInfo, error) {
+	file, err := os.Stat(i)
+	if err != nil {
+		return nil, errors.New("3")
+	}
+	return file, nil
+}
+
 func addFile(i string) error {
 
-	file, err := os.Stat(i)
-
+	file, err := checkFile(i)
 	if err != nil {
-		ErrorMsg(err)
+		return ErrorMsg(err)
 	}
 
 	v, u := formatSize(file.Size())
@@ -137,7 +160,34 @@ func addFile(i string) error {
 		},
 	}
 
+	filelist[i] = &data
 	PrintFileInfo(&data)
 
 	return nil
+}
+
+func Run(namefile string, binary string) {
+
+	file := func(n string) bool {
+		_, err := os.Stat(n)
+
+		if os.IsNotExist(err) {
+			return false
+		}
+		return true
+	}
+
+	if !file(namefile) {
+		ErrorMsg(errors.New("3"))
+	}
+
+	pm := ParseToInt(binary)
+	f := *(filelist[namefile])
+
+	if f.Pm >= pm {
+
+	} else if f.Pm <= pm {
+
+	}
+
 }

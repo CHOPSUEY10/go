@@ -2,43 +2,96 @@ package permission
 
 import (
 	"errors"
-	"fmt"
 	"os"
 )
 
+// Operasi OR digunakan untuk menambah nilai
+func addPermission(p int64, file *FileData) {
+
+	state, err := checkChanges(p, file)
+	if err != nil {
+		ErrorMsg(err)
+	}
+	if state == file.Pm {
+		file.Pm |= p
+		SuccessMsg(addMsg[p])
+	}
+}
+
+// Operasi AND NOT digunakan untuk mengurangi nilai
+func removePermission(p int64, file *FileData) {
+
+	state, err := checkChanges(p, file)
+	if err != nil {
+		ErrorMsg(err)
+	}
+	if state == file.Pm {
+		file.Pm &^= p
+		SuccessMsg(rmMsg[p])
+	}
+}
+
+// Operasi AND untuk mengecek nilai
+func checkChanges(p int64, file *FileData) (int64, error) {
+
+	if file.Pm > 7 {
+		return 0, errors.New("1")
+	}
+
+	check := func(p int64, v int64) int64 {
+		p = p & v
+		return p
+
+	}
+
+	return check(p, file.Pm), nil
+
+}
+
 func Run(args ...any) {
+	if len(args) < 3 {
+		showManual()
+		os.Exit(0)
+	}
 
 	namefile, ok := args[0].(string)
 
-	if !ok {
-		ErrorMsg(errors.New("5"))
+	if !ok || namefile == "" {
+		showManual()
+		os.Exit(0)
 	}
 
-	binary := args[1].(string)
+	binary, ok := args[1].(string)
+	if !ok || binary == "" {
+		showManual()
+		os.Exit(0)
+	}
+
 	show, ok := args[2].(string)
-
-	file := func(n string) bool {
-		_, err := os.Stat(n)
-
-		fmt.Println("Checking:", n)
-		fmt.Println("Error:", err)
-
-		if os.IsNotExist(err) {
-			return false
-		}
-		return err == nil
-	}
-
-	if !file(namefile) {
-		ErrorMsg(errors.New("3"))
+	if !ok {
+		show = ""
 	}
 
 	pm := parseToInt(binary)
+
+	if _, ok := addMsg[pm]; !ok {
+		defer showManual()
+		ErrorMsg(errors.New("1"))
+	}
+
+	if _, ok := filelist[namefile]; !ok {
+		if err := addFile(namefile); err != nil {
+			return
+		}
+	}
+
 	f := filelist[namefile]
 
-	if f.Pm >= pm {
+	if state, err := checkChanges(pm, f); err != nil {
+		ErrorMsg(err)
+	} else if state < pm {
 		addPermission(pm, f)
-	} else if f.Pm <= pm {
+	} else {
 		removePermission(pm, f)
 	}
 

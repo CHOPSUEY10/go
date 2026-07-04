@@ -5,9 +5,3 @@ type Node interface {
 	DisplayAdj() map[int]Node
 	Link(Node)
 }
-
-type GraphManager interface {
-	AddNode(Node)
-	RemoveNode(Node)
-	ShowNodes()
-}

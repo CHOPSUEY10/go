@@ -1,8 +1,6 @@
 package node
 
-import (
-	"grafers/graph"
-)
+import "grafers/graph"
 
 type Person struct {
 	ID  int

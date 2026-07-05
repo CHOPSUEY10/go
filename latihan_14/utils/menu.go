@@ -34,11 +34,15 @@ func Menu() {
 	reader := bufio.NewReader(os.Stdin)
 
 	for {
+		fmt.Printf("\n Implementasi Koding Graf  \n\n")
+		fmt.Printf("\n _________________________  \n\n")
+
 		fmt.Printf("\nMenu : \n\n")
 		fmt.Printf("\ta. Tambah Node \n")
 		fmt.Printf("\tb. Hubungkan Node\n")
 		fmt.Printf("\tc. Hapus Node\n")
 		fmt.Printf("\td. Traverse\n")
+		fmt.Printf("\ts. Cari Jalur Terpendek\n")
 		fmt.Printf("\te. Tampilkan Graph\n")
 		fmt.Printf("\tq. Keluar\n\n")
 
@@ -81,6 +85,14 @@ func Menu() {
 				continue
 			}
 			fmt.Printf("Sekarang berada di node %d.\n", s.Current.GetId())
+
+		case "s":
+			id := readInt(reader, "\nMasukkan id node yang ingin dikunjungi : ")
+			res := g.ShortestPath(s, id)
+			for k := range res {
+				fmt.Printf("Node path\n-> %d ", k)
+			}
+			fmt.Printf("\n")
 
 		case "e":
 			printGraph(g)

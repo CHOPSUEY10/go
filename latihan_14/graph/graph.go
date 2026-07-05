@@ -80,3 +80,20 @@ func (g *Graph) LinkNode(n, m *nodes.Node) {
 
 	n.Link(m)
 }
+
+func (g *Graph) ShortestPath(f *State, t int) (res map[int]*nodes.Node) {
+
+	state := true
+	res = make(map[int]*nodes.Node)
+	var curr *State
+	for state {
+		curr = g.Traverse(f)
+		res[curr.Current.GetId()] = curr.Current
+		if curr.Current.GetId() == t {
+			break
+		}
+
+	}
+	return res
+
+}

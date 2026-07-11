@@ -54,8 +54,8 @@ func main() {
 	go fetchMusics(chMusics)
 	go fetchData(done, chPictures, chMusics)
 
-	// menunggu sinyal done agar dapat blocking main goroutine
-	// tanpa set timer
+	//menunggu sinyal done agar dapat blocking main goroutine
+	//tanpa set timer
 	<-done
 	fmt.Println("Semua file berhasil didownload")
 }

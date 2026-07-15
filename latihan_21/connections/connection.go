@@ -11,24 +11,27 @@ type Connection struct {
 	AllNodes map[string]*nodes.Node
 }
 
-func (person *Connection) SendMessageToOne(msg chan string, s, r string) (string, error) {
+func (person *Connection) SendMessageToOne(msg, s, r string, finished chan bool) (string, error) {
 
 	sender := person.AllNodes[s]
 	receiver := person.AllNodes[r]
 
+	if receiver.MsgReceived == nil {
+		receiver.MsgReceived = make(map[string]string)
+	}
 	if receiver.Peers[sender.GetName()] == sender {
 
-		receiver.MsgReceived[sender.GetName()] = <-msg
-		close(msg)
+		receiver.MsgReceived[sender.GetName()] = msg
 		return "Succesfully sent", nil
 	}
+	finished <- true
 	return "", errors.New("Cannot find any peers you want to send")
 }
 
-func (person *Connection) SendMessageToAll(msg chan string, s string) {
+func (person *Connection) SendMessageToAll(msg string, s string, finished chan bool) {
 
 	sender := person.AllNodes[s]
-	sender.MsgSent = <-msg
+	sender.MsgSent = msg
 
 	for _, v := range person.AllNodes {
 		receiver := person.AllNodes[v.GetName()]
@@ -42,7 +45,7 @@ func (person *Connection) SendMessageToAll(msg chan string, s string) {
 			receiver.MsgReceived[v.GetName()] = sender.MsgSent
 		}
 	}
-	close(msg)
+	finished <- true
 
 }
 

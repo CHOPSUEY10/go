@@ -30,10 +30,14 @@ func main() {
 	// 	}
 	// 	fmt.Println()
 	// }
-	msgChan := make(chan string, 1)
-	msgChan <- "Hidup Pria Oslo"
+	msg := "Hidup Pria Oslo"
 	sender := "fadli"
-	go conn.SendMessageToAll(msgChan, sender)
+	receiver := "haaland"
+	finished := make(chan bool)
+	go conn.SendMessageToAll(msg, sender, finished)
+	go conn.SendMessageToOne("Good job haaland", sender, receiver, finished)
+
+	<-finished
 
 	for _, name := range nama {
 

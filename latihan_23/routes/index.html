@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+       <title>Chitchater</title> 
+        <style type="text/css">
+            body {
+                /* overflow:visible; */
+                padding: 0;
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                background: rgb(255, 255, 255);
+            }
+
+            .center {
+                margin: auto;
+                width: 50%;
+                border: 3px solid rgb(0, 0, 0);
+                padding: 10px;
+            }
+
+            #chatroom-selection{
+
+                display : flex;
+                gap : 1vw;
+                flex : 4 2 1
+            }
+
+            #chatroom-message{
+                margin-block : 2vh;
+                display : flex;
+                gap : 1vw
+            }
+
+            .gap{
+                /* border : none; */
+                background-color : rgb(68, 195, 237)
+            }
+        </style>
+    </head>
+
+    <body>
+    
+        <div class="center">
+            <h1>Chat app pertamaku hehe</h1>
+            <h3 id="chat-header">Currently in chat : general</h3>
+
+        <form id="chatroom-selection" action="">
+            <label for="chatroom">Chatroom :</label>
+            <input type="text" id="chatroom" name="chatroom"><br><br>
+            <input type="submit" value="Change Chatroom">
+        </form>
+        <br>
+        
+
+        <textarea class="messagearea"  id="chatmessages" readonly name="chatmessages" rows="10" cols="85" placeholder="welcome to chatroom">
+        </textarea>
+
+        <div class="gap">
+
+
+        </div>
+
+        <form id="chatroom-message">
+            <label for="message">Message : </label>
+            <input type="text" id="message" name="message"><br><br>
+            <input type="submit" value="Send Message">
+        </form>
+
+        </div>
+
+        <script>
+           
+            let selectedChat ="general"
+            let conn = null
+            const changeChatRoom  = (e) => {
+                 e.preventDefault();
+                let newchat = document.querySelector("#chatroom")
+                if(newchat !== null && newchat.value != selectedChat){
+                    console.log(newchat);
+                }
+                
+                return false
+                
+            }   
+            
+            const sendMessage = (e) => {
+                 e.preventDefault();
+                let newmessage = document.querySelector("#message")
+                if(newmessage != null){
+                    conn.send(newmessage.value)
+                }
+
+                return false
+
+            }
+
+            window.onload = () => {
+                document.querySelector("#chatroom-selection").onsubmit = changeChatRoom
+                document.querySelector("#chatroom-message").onsubmit = sendMessage
+
+                if(window["WebSocket"]){
+                    console.log("support websockets")
+                    conn = new WebSocket("ws://" + location.host + "/ws");
+
+                    conn.onopen = () => console.log("CONNECTED");
+
+                    conn.onerror = (e) => console.log("ERROR", e);
+
+                    conn.onclose = (e) => console.log("CLOSED", e);
+                }else{
+                    alert("Browser does not support websocket")
+                }
+                
+            }
+
+
+
+
+
+
+        </script>
+    </body>
+
+
+
+
+</html>

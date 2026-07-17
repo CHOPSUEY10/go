@@ -37,6 +37,11 @@
                 /* border : none; */
                 background-color : rgb(68, 195, 237)
             }
+
+            .messagearea {
+                resize: none; 
+                overflow: hidden; 
+            }  
         </style>
     </head>
 
@@ -58,8 +63,6 @@
         </textarea>
 
         <div class="gap">
-
-
         </div>
 
         <form id="chatroom-message">
@@ -70,57 +73,7 @@
 
         </div>
 
-        <script>
-           
-            let selectedChat ="general"
-            let conn = null
-            const changeChatRoom  = (e) => {
-                 e.preventDefault();
-                let newchat = document.querySelector("#chatroom")
-                if(newchat !== null && newchat.value != selectedChat){
-                    console.log(newchat);
-                }
-                
-                return false
-                
-            }   
-            
-            const sendMessage = (e) => {
-                 e.preventDefault();
-                let newmessage = document.querySelector("#message")
-                if(newmessage != null){
-                    conn.send(newmessage.value)
-                }
-
-                return false
-
-            }
-
-            window.onload = () => {
-                document.querySelector("#chatroom-selection").onsubmit = changeChatRoom
-                document.querySelector("#chatroom-message").onsubmit = sendMessage
-
-                if(window["WebSocket"]){
-                    console.log("support websockets")
-                    conn = new WebSocket("ws://" + location.host + "/ws");
-
-                    conn.onopen = () => console.log("CONNECTED");
-
-                    conn.onerror = (e) => console.log("ERROR", e);
-
-                    conn.onclose = (e) => console.log("CLOSED", e);
-                }else{
-                    alert("Browser does not support websocket")
-                }
-                
-            }
-
-
-
-
-
-
-        </script>
+        <script src="script.js"></script>
     </body>
 
 

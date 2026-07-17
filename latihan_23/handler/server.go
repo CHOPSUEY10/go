@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"sync"
@@ -13,15 +15,53 @@ var wsUpgrader = websocket.Upgrader{
 	WriteBufferSize: 1024,
 }
 
+// implementing EventHandler function
+func SendMessage(event Event, c *Client) error {
+
+	fmt.Printf("Menerima pesan baru : %s \n", string(event.Payload))
+	for client := range c.server.clients {
+		client.egress <- event
+	}
+
+	return nil
+
+}
+
 type ChatServer struct {
-	clients clientList
+	clients  clientList
+	handlers map[string]EventHandler
 	sync.RWMutex
 }
 
 func NewChatServer() *ChatServer {
-	return &ChatServer{
-		clients: make(clientList),
+	serve := &ChatServer{
+		clients:  make(clientList),
+		handlers: make(map[string]EventHandler),
 	}
+
+	serve.SetupEventHandlers()
+	return serve
+
+}
+
+// Initialize eventhandler
+func (cs *ChatServer) SetupEventHandlers() {
+
+	cs.handlers[EventSendMessage] = SendMessage
+
+}
+
+func (cs *ChatServer) routeEvent(event Event, c *Client) error {
+	// Check if the event type is part of handlers value
+	if handler, ok := cs.handlers[event.Type]; ok {
+		if err := handler(event, c); err != nil {
+			return err
+		}
+		return nil
+	} else {
+		return errors.New("there is no such event type")
+	}
+
 }
 
 func (cs *ChatServer) ServeConnection(w http.ResponseWriter, r *http.Request) {

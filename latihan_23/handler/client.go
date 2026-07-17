@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/gorilla/websocket"
@@ -8,10 +9,19 @@ import (
 
 type clientList map[*Client]bool
 
+var typeMsg = map[int]string{
+	1:  "TextMessage",
+	2:  "BinaryMessage",
+	8:  "CloseMessage",
+	9:  "PingMessage",
+	10: "PongMessage",
+}
+
 type Client struct {
 	connection *websocket.Conn
 	server     *ChatServer
-	egress     chan []byte
+	egress     chan Event
+	//sync.RWMutex
 }
 
 func NewClient(conn *websocket.Conn, server *ChatServer) *Client {
@@ -20,21 +30,9 @@ func NewClient(conn *websocket.Conn, server *ChatServer) *Client {
 
 		connection: conn,
 		server:     server,
-		egress:     make(chan []byte),
+		egress:     make(chan Event),
 	}
 
-}
-
-var typeMsg = map[int]string{
-	1: "TextMessage",
-
-	2: "BinaryMessage",
-
-	8: "CloseMessage",
-
-	9: "PingMessage",
-
-	10: "PongMessage",
 }
 
 func (c *Client) readMessages() {
@@ -46,7 +44,7 @@ func (c *Client) readMessages() {
 
 	for {
 
-		messageType, payload, err := c.connection.ReadMessage()
+		_, payload, err := c.connection.ReadMessage()
 
 		if err != nil {
 			// mencetak log error jika error bukan dari client
@@ -57,19 +55,29 @@ func (c *Client) readMessages() {
 			break
 		}
 
-		log.Println(typeMsg[messageType])
-		log.Println(string(payload))
-		for wsclient := range c.server.clients {
-			wsclient.egress <- payload
+		var request Event
+		if err := json.Unmarshal(payload, &request); err != nil {
+			log.Printf("error unmashalling event %v", err)
+			break
 		}
+
+		if err := c.server.routeEvent(request, c); err != nil {
+			log.Printf("error handling messsage : %v", err)
+
+		}
+
 	}
 }
 
 func (c *Client) writeMessages() {
+
 	defer func() {
+
 		c.server.removeClient(c)
 
 	}()
+
+	//writer := bufio.NewWriter(c.connection.NetConn())
 
 	for {
 		select {
@@ -82,13 +90,18 @@ func (c *Client) writeMessages() {
 				return
 			}
 
-			if err := c.connection.WriteMessage(websocket.TextMessage, message); err != nil {
+			data, err := json.Marshal(message)
+			if err != nil {
+				log.Println(err)
+				return
+
+			}
+
+			if err := c.connection.WriteMessage(websocket.TextMessage, data); err != nil {
 				log.Printf("Failed to send message %v", err)
 			}
 
-			log.Printf("Message sent")
 		}
 
 	}
-
 }

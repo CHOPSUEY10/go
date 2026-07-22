@@ -1,16 +1,21 @@
 package handler
 
 import (
+	"chitchater/auth"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
 
 var wsUpgrader = websocket.Upgrader{
+	CheckOrigin:     checkOrigin,
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 }
@@ -27,16 +32,30 @@ func SendMessage(event Event, c *Client) error {
 
 }
 
+func checkOrigin(r *http.Request) bool {
+	origin := r.Header.Get("Origin")
+
+	allowedOrigins := map[string]bool{
+		"http://localhost:8080":  true,
+		"http://127.0.0.1:8080":  true,
+		"https://localhost:8080": true,
+	}
+
+	return allowedOrigins[origin]
+}
+
 type ChatServer struct {
 	clients  clientList
 	handlers map[string]EventHandler
+	otps     auth.RetentionMap
 	sync.RWMutex
 }
 
-func NewChatServer() *ChatServer {
+func NewChatServer(ctx context.Context) *ChatServer {
 	serve := &ChatServer{
 		clients:  make(clientList),
 		handlers: make(map[string]EventHandler),
+		otps:     auth.NewRetentionMap(ctx, 5*time.Second),
 	}
 
 	serve.SetupEventHandlers()
@@ -64,7 +83,23 @@ func (cs *ChatServer) routeEvent(event Event, c *Client) error {
 
 }
 
+func (cs *ChatServer) checkOTP(w http.ResponseWriter, r *http.Request) bool {
+	otp := r.URL.Query().Get("otp")
+	if otp == "" {
+		w.WriteHeader(http.StatusUnauthorized)
+		return false
+	}
+
+	if !cs.otps.VerifyOTP(otp) {
+		w.WriteHeader(http.StatusUnauthorized)
+		return false
+	}
+
+	return true
+}
+
 func (cs *ChatServer) ServeConnection(w http.ResponseWriter, r *http.Request) {
+
 	if r.Method != http.MethodGet {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -75,10 +110,15 @@ func (cs *ChatServer) ServeConnection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !cs.checkOTP(w, r) {
+		log.Println("WebSocket connection rejected: invalid OTP")
+		return
+	}
+
 	log.Println("New connection")
 	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Println("upgrade failed:", err)
+		log.Println("Connection closed. ", err)
 		return
 	}
 
@@ -113,4 +153,67 @@ func (cs *ChatServer) removeClient(client *Client) {
 		delete(cs.clients, client)
 	}
 
+}
+
+func (cs *ChatServer) LoginHandler(w http.ResponseWriter, r *http.Request) {
+
+	reqAccount := new(auth.Account)
+
+	if err := json.NewDecoder(r.Body).Decode(reqAccount); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	acc, err := reqAccount.FindAccount(reqAccount.Username)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	ctx := context.WithValue(r.Context(), reqAccount, reqAccount.Password)
+	err = acc.ValidatePassword(ctx)
+	if err != nil {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	type Response struct {
+		OTP string `json:"otp"`
+	}
+
+	otp := cs.otps.NewOTP()
+	var response = Response{
+		OTP: otp.Key,
+	}
+
+	data, err := json.Marshal(response)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(data)
+
+}
+
+func (cs *ChatServer) SignUpHandler(w http.ResponseWriter, r *http.Request) {
+
+	type RequestAccount struct {
+		username string
+		password string
+	}
+	reqAccount := &RequestAccount{}
+
+	if err := json.NewDecoder(r.Body).Decode(reqAccount); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	newAccount := auth.CreateAccount(reqAccount.username, reqAccount.password)
+	if err := newAccount.SaveAccount(); err != nil {
+		http.Error(w, err.Error(), http.StatusServiceUnavailable)
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

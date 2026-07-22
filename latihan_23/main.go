@@ -2,6 +2,7 @@ package main
 
 import (
 	"chitchater/handler"
+	"context"
 	"embed"
 	"io/fs"
 	"log"
@@ -23,7 +24,10 @@ func main() {
 
 func setupAPI(routes http.FileSystem) {
 
-	serve := handler.NewChatServer()
+	ctx := context.Background()
+	serve := handler.NewChatServer(ctx)
 	http.Handle("/", http.FileServer(routes))
 	http.HandleFunc("/ws", serve.ServeConnection)
+	http.HandleFunc("/login", serve.LoginHandler)
+
 }

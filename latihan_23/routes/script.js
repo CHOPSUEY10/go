@@ -3,7 +3,7 @@
         
 
 
-        class Event {
+        class ChatEvent {
 
             constructor(type,payload){
                 this.type = type
@@ -28,7 +28,7 @@
             }
 
             static sendEvent(eventName, payload){
-                const event = new Event(eventName,payload)
+                const event = new ChatEvent(eventName,payload)
                 conn.send(JSON.stringify(event))
             }
 
@@ -55,7 +55,7 @@
                 let newmessage = document.querySelector("#message")
             
                 if(newmessage != null){
-                    Event.sendEvent("send message",newmessage.value)
+                    ChatEvent.sendEvent("send message",newmessage.value)
                 }
                 return false
 
@@ -81,31 +81,73 @@
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }
 
-            window.onload = () => {
-                document.querySelector("#chatroom-selection").onsubmit = changeChatRoom
-                document.querySelector("#chatroom-message").onsubmit = sendMessage
+            const login = async (e) => {
+                e.preventDefault();
 
+                let formData = {
+                    "username": document.querySelector("#username").value,
+                    "password": document.querySelector("#password").value,
+                }
+
+                try {
+                    const res = await fetch("/login", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(formData),
+                        mode: "cors"
+                    })
+                    if (!res.ok) {
+                        const errorText = await res.text()
+                        throw errorText || "Unauthorized"
+                    }
+                    const data = await res.json()
+
+                    connectWebsocket(data.otp)
+
+                } catch (err) {
+                    console.error(err)
+                }
+            }
+
+            const connectWebsocket = (otp) =>{
+                
                 if(window["WebSocket"]){
                     
                     console.log("support websockets")
-                    conn = new WebSocket("ws://" + location.host + "/ws");
+                    conn = new WebSocket(`ws://${location.host}/ws?otp=${otp}`);
                     
                     conn.onmessage = (e) => {
                         const eventData = JSON.parse(e.data)
-                        const event = Object.assign(new Event,eventData)
+                        const event = Object.assign(new ChatEvent(),eventData)
                         event.routeEvent()    
                         streamMessage(eventData)
                     }
 
-                    conn.onopen = () => console.log("CONNECTED");
+                    conn.onopen = () => {
+                        document.querySelector("#connection-header").innerHTML = "Connected to Chat"
+                    }
 
                     conn.onerror = (e) => console.log("ERROR", e);
 
-                    conn.onclose = (e) => console.log("CLOSED", e);
+                    conn.onclose = (e) =>{
+                          document.querySelector("#connection-header").innerHTML = "Disconnected"
+                    }
+
+
                 }else{
                     alert("Browser does not support websocket")
                 }
-                
+            }
+
+
+
+
+            window.onload = () => {
+                document.querySelector("#chatroom-selection").onsubmit = changeChatRoom
+                document.querySelector("#chatroom-message").onsubmit = sendMessage
+                document.querySelector("#login-form").onsubmit = login
             }
 
 

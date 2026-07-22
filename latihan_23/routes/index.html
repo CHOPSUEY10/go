@@ -11,25 +11,36 @@
                 width: 100%;
                 height: 100%;
                 background: rgb(255, 255, 255);
+               
             }
+
 
             .center {
                 margin: auto;
-                width: 50%;
+                width: 75%;
                 border: 3px solid rgb(0, 0, 0);
-                padding: 10px;
+                padding-inline: 2vw;
+                padding-block: 2vh;
+                
+
+            }
+
+            .center > * {
+                  justify-content : center;
             }
 
             #chatroom-selection{
 
                 display : flex;
                 gap : 1vw;
-                flex : 4 2 1
+                flex : 4 2 1;
+                margin-inline : 2vw;
             }
 
             #chatroom-message{
                 margin-block : 2vh;
                 display : flex;
+                flex : 4 2 1;
                 gap : 1vw
             }
 
@@ -39,37 +50,61 @@
             }
 
             .messagearea {
-                resize: none; 
-                overflow: hidden; 
+                overflow: none; 
+                
             }  
+            
+            .auth-section {
+                border : 3px solid black;
+                padding : 2em;
+                margin-block : 4vh;
+              
+                justify-content: center; 
+            }
+            
+            .auth-section #login-form{
+                display : flex;
+                flex-direction : column;
+                max-width: 400px;
+                margin: 0 auto;
+                width: 100%; /* Mengisi ruang yang tersedia */            }
+            
         </style>
     </head>
-
     <body>
     
         <div class="center">
-            <h1>Chat app pertamaku hehe</h1>
-            <h3 id="chat-header">Currently in chat : general</h3>
+                <h1>Chitchater</h1>
+                <h3 id="chat-header">Currently in chat : general</h3>
+                <h1 id="connection-header">Connected to websocket : false </h1>
 
-        <form id="chatroom-selection" action="">
-            <label for="chatroom">Chatroom :</label>
-            <input type="text" id="chatroom" name="chatroom"><br><br>
-            <input type="submit" value="Change Chatroom">
-        </form>
-        <br>
+            <form id="chatroom-selection" action="">
+                <label for="chatroom">Chatroom :</label>
+                <input type="text" id="chatroom" name="chatroom"><br><br>
+                <input type="submit" value="Change Chatroom">
+            </form>
         
+            <br>
+        
+            <textarea class="messagearea"  id="chatmessages" readonly name="chatmessages" rows="10" cols="85" placeholder="welcome to chatroom">
+            </textarea>
 
-        <textarea class="messagearea"  id="chatmessages" readonly name="chatmessages" rows="10" cols="85" placeholder="welcome to chatroom">
-        </textarea>
+            <form id="chatroom-message">
+                <label for="message">Message : </label>
+                <input type="text" id="message" name="message"><br><br>
+                <input type="submit" value="Send Message">
+            </form>
 
-        <div class="gap">
-        </div>
-
-        <form id="chatroom-message">
-            <label for="message">Message : </label>
-            <input type="text" id="message" name="message"><br><br>
-            <input type="submit" value="Send Message">
-        </form>
+            
+            <div class="auth-section">            
+                <form id="login-form" method="post" action="/login">
+                    <label for="username"><b>Username :</b></label>
+                    <input type="text" id="username" name="username" autocomplete="username"><br><br>
+                    <label for="password"><b>Password :</b></label>
+                    <input type="password" id="password" name="password" autocomplete="current-password"><br><br>
+                    <input type="submit" value="Login">
+                </form>
+            </div>
 
         </div>
 
